@@ -1,0 +1,11 @@
+__pycache__/
+__pycache__/**
+
+assets/app/*
+assets/config/*
+assets/ressourcepacks/*
+assets/shaderpacks/*
+
+modules/globals.py
+
+!.gitkeep
