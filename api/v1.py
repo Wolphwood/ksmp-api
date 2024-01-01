@@ -213,7 +213,8 @@ def get_app_get_versions():
     for version in sorted(list(dict.fromkeys([v.replace('-beta','').replace('-alpha','') for v in folders]))):
         for prefix in ['','-beta', '-alpha']:
             if version + prefix in folders:
-                versions.append(version + prefix);
+                if (re.match(r'^([0-9]+.*)+', version)):
+                    versions.append(version + prefix);
 
     return versions;
 
@@ -226,7 +227,8 @@ def get_app_get_last_version(targetFile = None):
     for version in sorted(list(dict.fromkeys([v.replace('-beta','').replace('-alpha','') for v in folders]))):
         for prefix in ['','-beta', '-alpha']:
             if version + prefix in folders:
-                versions.append(version + prefix);
+                if (re.match(r'^([0-9]+.*)+', version)):
+                    versions.append(version + prefix);
 
     version = versions[-1];
 

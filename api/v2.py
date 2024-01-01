@@ -17,6 +17,9 @@ API_VERSION = "v2";
 
 PolitePeople = [];
 
+def excludeGitFiles(files):
+    return [file for file in files if file != '.gitkeep']
+
 @app.route(API_PREFIX + API_VERSION + '/hello')
 @app.route(API_PREFIX + API_VERSION + '/hello/')
 def v2_hello():
@@ -220,9 +223,9 @@ def v2_get_ressourcepacks_full():
     
     packs = {};
 
-    for category in os.listdir(LOCATION.RESSOURCEPACKS):
+    for category in excludeGitFiles(os.listdir(LOCATION.RESSOURCEPACKS)):
         categories = []
-        for packname in os.listdir(os.path.join(LOCATION.RESSOURCEPACKS, category)):
+        for packname in excludeGitFiles(os.listdir(os.path.join(LOCATION.RESSOURCEPACKS, category))):
             version = findPackVersion(category, packname)
 
             categories.append({
@@ -242,7 +245,7 @@ def v2_get_ressourcepacks():
             "message": "you didn't say hello and it make me sad :("
         }
     
-    return os.listdir(LOCATION.RESSOURCEPACKS);
+    return excludeGitFiles(os.listdir(LOCATION.RESSOURCEPACKS));
 
 @app.route(API_PREFIX + API_VERSION + '/ressourcepack/<category>')
 @app.route(API_PREFIX + API_VERSION + '/ressourcepack/<category>/')
@@ -260,7 +263,7 @@ def v2_list_specific_ressourcepack(category):
         };
 
     packs = [];
-    for packname in os.listdir(os.path.join(LOCATION.RESSOURCEPACKS, category)):
+    for packname in excludeGitFiles(os.listdir(os.path.join(LOCATION.RESSOURCEPACKS, category))):
             version = findPackVersion(category, packname)
 
             packs.append({
@@ -329,7 +332,7 @@ def v2_shaderpacks():
             "message": "you didn't say hello and it make me sad :("
         }
     
-    return os.listdir(LOCATION.SHADERPACKS);
+    return excludeGitFiles(os.listdir(LOCATION.SHADERPACKS));
 
 @app.route(API_PREFIX + API_VERSION + '/shaderpack/<shader>')
 @app.route(API_PREFIX + API_VERSION + '/shaderpack/<shader>/')
@@ -339,14 +342,14 @@ def v2_shaderpack_shader(shader):
             "error": "RUDE",
             "message": "you didn't say hello and it make me sad :("
         }
-    
+
     if not os.path.exists(os.path.join(LOCATION.SHADERPACKS, shader)):
         return {
             "error": 404,
             "message": f"Unknown '{shader}' shader group."
         };
     
-    return list(sorted(os.listdir(os.path.join(LOCATION.SHADERPACKS, shader)), key=_sort_shader_version, reverse=True));
+    return list(sorted(excludeGitFiles(os.listdir(os.path.join(LOCATION.SHADERPACKS, shader))), key=_sort_shader_version, reverse=True));
 
 @app.route(API_PREFIX + API_VERSION + '/shaderpack/<shader>/latest')
 @app.route(API_PREFIX + API_VERSION + '/shaderpack/<shader>/latest/')
@@ -446,7 +449,7 @@ def v2_get_config_shaderpack_latest(shader):
 
     versions = v2_shaderpack_shader(shader);
     
-    configs = list(filter(lambda file: os.path.splitext(file)[1] == ".txt", os.listdir(os.path.join(LOCATION.SHADERPACKS, shader, versions[0]))));
+    configs = list(filter(lambda file: os.path.splitext(file)[1] == ".txt", excludeGitFiles(os.listdir(os.path.join(LOCATION.SHADERPACKS, shader, versions[0])))));
     return list(map(lambda file: os.path.splitext(file)[0], configs));
 
 @app.route(API_PREFIX + API_VERSION + '/config/shaderpack/<shader>/latest/<config>')
@@ -488,7 +491,7 @@ def v2_get_config_shaderpack_version(shader, version):
             "message": f"File not found '{shader} v{version}'."
         };
     
-    configs = list(filter(lambda file: os.path.splitext(file)[1] == ".txt", os.listdir(os.path.join(LOCATION.SHADERPACKS, shader, version))));
+    configs = list(filter(lambda file: os.path.splitext(file)[1] == ".txt", excludeGitFiles(os.listdir(os.path.join(LOCATION.SHADERPACKS, shader, version)))));
     return list(map(lambda file: os.path.splitext(file)[0], configs));
 
 @app.route(API_PREFIX + API_VERSION + '/config/shaderpack/<shader>/<version>/<config>')
@@ -529,7 +532,7 @@ def _sort_app_version(item):
 @app.route(API_PREFIX + API_VERSION + '/app')
 @app.route(API_PREFIX + API_VERSION + '/app/')
 def v2_get_app_type():
-    return os.listdir(LOCATION.APP);
+    return excludeGitFiles(os.listdir(LOCATION.APP));
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>')
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/')
@@ -543,7 +546,7 @@ def v2_get_app_versions(type):
         }
     
     
-    return list(sorted(os.listdir(folder), key=_sort_app_version, reverse=True));
+    return list(sorted(excludeGitFiles(os.listdir(folder)), key=_sort_app_version, reverse=True));
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/latest')
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/latest/')
@@ -556,26 +559,37 @@ def v2_get_app_latest_files(type):
             "message": f"No '{type}' app found."
         }
 
-    return os.listdir(os.path.join(LOCATION.APP, type, versions[0]))
+    return excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, versions[0])))
 
-@app.route(API_PREFIX + API_VERSION + '/app/<type>/latest/<file>')
-def v2_get_app_latest_file(type, file):
+@app.route(API_PREFIX + API_VERSION + '/app/<type>/latest/<filename>')
+def v2_get_app_latest_file(type, filename):
     versions = v2_get_app_versions(type);
-    filename = os.path.join(LOCATION.APP, type, versions[0], file);
+    file = os.path.join(LOCATION.APP, type, versions[0], filename);
 
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
         return {
             "error": 404,
             "message": f"No '{type}' app found."
         }
+
+    files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, versions[0])))];
+
+    if os.path.exists(file):
+        return send_file(file, as_attachment=True);
     
-    if not os.path.exists(filename):
+    elif filename in [file.replace(' ', '-') for file in files]:
+        filename = next((file for file in files if file.replace(' ', '-') == filename), None);
+        print(COLOR_RED, filename, RESET_FORMAT)
+        file = os.path.join(LOCATION.APP, type, versions[0], filename);
+        return send_file(file, as_attachment=True);
+    
+    else:
         return {
             "error": 404,
-            "message": f"Unknown file '{file}' in {type} app v{versions[0]}."
+            "message": f"Unknown file '{filename}' in {type} app v{versions[0]}."
         }
 
-    return send_file(filename, as_attachment=True);
+    
 
 
 
@@ -595,10 +609,10 @@ def v2_get_app_version_files(type, version):
             "message": f"No '{type}' app v{version} found."
         }
     
-    return os.listdir(os.path.join(LOCATION.APP, type, version));
+    return excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, version)));
 
-@app.route(API_PREFIX + API_VERSION + '/app/<type>/<version>/<file>')
-def v2_get_app_version_file(type, version, file):
+@app.route(API_PREFIX + API_VERSION + '/app/<type>/<version>/<filename>')
+def v2_get_app_version_file(type, version, filename):
     
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
         return {
@@ -612,10 +626,23 @@ def v2_get_app_version_file(type, version, file):
             "message": f"No '{type}' app v{version} found."
         }
     
-    if not os.path.exists(os.path.join(LOCATION.APP, type, version, file)):
+    file = os.path.join(LOCATION.APP, type, version, filename);
+    
+    files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, version)))];
+
+    if os.path.exists(file):
+        return send_file(file, as_attachment=True);
+    
+    elif filename in [file.replace(' ', '-') for file in files]:
+        filename = next((file for file in files if file.replace(' ', '-') == filename), None);
+        print(COLOR_RED, filename, RESET_FORMAT)
+        file = os.path.join(LOCATION.APP, type, version, filename);
+        return send_file(file, as_attachment=True);
+    
+    else:
         return {
             "error": 404,
-            "message": f"Unknown file '{file}' in {type} app v{version}."
+            "message": f"Unknown file '{filename}' in {type} app v{versions[0]}."
         }
     
     return send_file(os.path.join(LOCATION.APP, type, version, file), as_attachment=True);
