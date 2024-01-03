@@ -20,6 +20,12 @@ PolitePeople = [];
 def excludeGitFiles(files):
     return [file for file in files if file != '.gitkeep']
 
+
+@app.route(API_PREFIX + API_VERSION + '/polite/<path:path>')
+def v2_polite_stuff(path):
+    v2_hello();
+    return redirect(API_PREFIX + API_VERSION + '/' + path);
+
 @app.route(API_PREFIX + API_VERSION + '/hello')
 @app.route(API_PREFIX + API_VERSION + '/hello/')
 def v2_hello():
