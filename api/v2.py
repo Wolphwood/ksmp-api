@@ -529,14 +529,49 @@ def v2_get_config_shaderpack_version_config(shader, version, config):
 def _sort_app_version(item):
         return list(map(int, item.split('.')));
 
+def _find_app_file(type, version, filename):
+    versions = v2_get_app_versions(type);
+    vindex = next((index for (index, v) in enumerate(versions) if v == version), None);
+
+    for version in versions[vindex:]:
+        file = os.path.join(LOCATION.APP, type, version, filename);
+        files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, version)))];
+
+        if os.path.exists(file):
+            print(COLOR_GREEN, f"Find {filename} in v{version}");
+            print(COLOR_GREEN, STYLE_REVERSE, f"File location : '{file}'", RESET_FORMAT);
+            return file;
+        
+        elif filename in [file.replace(' ', '-') for file in files]:
+            filename = next((file for file in files if file.replace(' ', '-') == filename), None);
+            file = os.path.join(LOCATION.APP, type, version, filename);
+            
+            print(COLOR_GREEN, f"Find {filename} in v{version}" ,RESET_FORMAT);
+            print(COLOR_GREEN, STYLE_REVERSE, f"File location : '{file}'", RESET_FORMAT);
+            return file;
+
+    return None;
+
 @app.route(API_PREFIX + API_VERSION + '/app')
 @app.route(API_PREFIX + API_VERSION + '/app/')
 def v2_get_app_type():
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     return excludeGitFiles(os.listdir(LOCATION.APP));
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>')
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/')
 def v2_get_app_versions(type):
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     folder = os.path.join(LOCATION.APP, type)
 
     if not os.path.exists(folder):
@@ -551,6 +586,12 @@ def v2_get_app_versions(type):
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/latest')
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/latest/')
 def v2_get_app_latest_files(type):
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     versions = v2_get_app_versions(type);
 
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
@@ -563,8 +604,13 @@ def v2_get_app_latest_files(type):
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/latest/<filename>')
 def v2_get_app_latest_file(type, filename):
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     versions = v2_get_app_versions(type);
-    file = os.path.join(LOCATION.APP, type, versions[0], filename);
 
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
         return {
@@ -572,16 +618,10 @@ def v2_get_app_latest_file(type, filename):
             "message": f"No '{type}' app found."
         }
 
-    files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, versions[0])))];
+    foundFile = _find_app_file(type, versions[0], filename);
 
-    if os.path.exists(file):
-        return send_file(file, as_attachment=True);
-    
-    elif filename in [file.replace(' ', '-') for file in files]:
-        filename = next((file for file in files if file.replace(' ', '-') == filename), None);
-        print(COLOR_RED, filename, RESET_FORMAT)
-        file = os.path.join(LOCATION.APP, type, versions[0], filename);
-        return send_file(file, as_attachment=True);
+    if foundFile:
+        return send_file(foundFile, as_attachment=True);
     
     else:
         return {
@@ -589,14 +629,16 @@ def v2_get_app_latest_file(type, filename):
             "message": f"Unknown file '{filename}' in {type} app v{versions[0]}."
         }
 
-    
-
-
-
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/<version>')
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/<version>/')
 def v2_get_app_version_files(type, version):
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
         return {
             "error": 404,
@@ -613,6 +655,12 @@ def v2_get_app_version_files(type, version):
 
 @app.route(API_PREFIX + API_VERSION + '/app/<type>/<version>/<filename>')
 def v2_get_app_version_file(type, version, filename):
+    if not request.remote_addr in PolitePeople:
+        return {
+            "error": "RUDE",
+            "message": "you didn't say hello and it make me sad :("
+        }
+    
     
     if not os.path.exists(os.path.join(LOCATION.APP, type)):
         return {
@@ -626,24 +674,14 @@ def v2_get_app_version_file(type, version, filename):
             "message": f"No '{type}' app v{version} found."
         }
     
-    file = os.path.join(LOCATION.APP, type, version, filename);
-    
-    files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, version)))];
+    foundFile = _find_app_file(type, version, filename);
 
-    if os.path.exists(file):
-        return send_file(file, as_attachment=True);
-    
-    elif filename in [file.replace(' ', '-') for file in files]:
-        filename = next((file for file in files if file.replace(' ', '-') == filename), None);
-        print(COLOR_RED, filename, RESET_FORMAT)
-        file = os.path.join(LOCATION.APP, type, version, filename);
-        return send_file(file, as_attachment=True);
+    if foundFile:
+        return send_file(foundFile, as_attachment=True);
     
     else:
         return {
             "error": 404,
-            "message": f"Unknown file '{filename}' in {type} app v{versions[0]}."
+            "message": f"Unknown file '{filename}' in {type} app v{version}."
         }
-    
-    return send_file(os.path.join(LOCATION.APP, type, version, file), as_attachment=True);
 # endregion
