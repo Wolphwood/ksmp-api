@@ -538,16 +538,11 @@ def _find_app_file(type, version, filename):
         files = [file for file in excludeGitFiles(os.listdir(os.path.join(LOCATION.APP, type, version)))];
 
         if os.path.exists(file):
-            print(COLOR_GREEN, f"Find {filename} in v{version}");
-            print(COLOR_GREEN, STYLE_REVERSE, f"File location : '{file}'", RESET_FORMAT);
             return file;
         
         elif filename in [file.replace(' ', '-') for file in files]:
             filename = next((file for file in files if file.replace(' ', '-') == filename), None);
             file = os.path.join(LOCATION.APP, type, version, filename);
-            
-            print(COLOR_GREEN, f"Find {filename} in v{version}" ,RESET_FORMAT);
-            print(COLOR_GREEN, STYLE_REVERSE, f"File location : '{file}'", RESET_FORMAT);
             return file;
 
     return None;
